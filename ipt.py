@@ -27,6 +27,8 @@ cv2.resizeWindow(wndTitle, wndWidth, wndHeight)
 # 显示图像
 cv2.imshow("IPT Demo", img)
 
+roiPts = []  # 用于存放 4 个顶点
+
 # 按任意键退出
 cv2.waitKey(0)
 cv2.destroyAllWindows()
