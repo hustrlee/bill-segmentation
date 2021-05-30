@@ -1,5 +1,6 @@
 import cv2
 import platform
+import numpy as np
 
 if __name__ == "__main__":
     imgPath = "dut.jpg"
@@ -39,14 +40,12 @@ if __name__ == "__main__":
 
     roiPts = []  # 用于存放 4 个顶点
 
-    def defineRoi(event, x, y, flags, param):
-        global img, roiPts
+    def define_roi(event, x, y, flags, param):
+        global roiPts
 
-        imgMask = img.copy()  # 保留原始图像，在 imgMask 上绘制 ROI 区域
-
-        def drawRoi():
-            global roiPts
-            nonlocal imgMask
+        def draw_roi():
+            global roiPts, img
+            imgMask = img.copy()  # 保留原始图像，在 imgMask 上绘制 ROI 区域
 
             # 绘制所有的点，及连线
             for i in range(len(roiPts)):
@@ -59,16 +58,16 @@ if __name__ == "__main__":
 
         if event == cv2.EVENT_LBUTTONDOWN:
             if len(roiPts) < 4:  # 不足 4 个顶点，则将该点加入到顶点数组，并绘制 ROI 区域
-                roiPts.append((x, y))
-                drawRoi()
+                roiPts.append([x, y])
+                draw_roi()
 
         if event == cv2.EVENT_RBUTTONDOWN:
             if len(roiPts) > 0:  # 至少有 1 个顶点，则删除最后一个顶点，并绘制 ROI 区域
                 roiPts.pop()
-                drawRoi()
+                draw_roi()
 
     # 监控鼠标事件，定义 ROI 区域
-    cv2.setMouseCallback(wndTitle, defineRoi)
+    cv2.setMouseCallback(wndTitle, define_roi)
 
     # 等待按键：
     # ESC：退出
@@ -79,11 +78,29 @@ if __name__ == "__main__":
             break
         if key == 13:
             # 对 ROI 区域进行透视变换，并显示
+            # 将四边形的顶点按逆时针排序：（右上、左上，左下，右下）
+            print("ROI 顶点：", roiPts)
+            # 计算四边形的质心
+            centroid = [0.0, 0.0]
+            for i in range(0, 3):
+                centroid[0] += roiPts[i][0]
+                centroid[1] += roiPts[i][1]
+            centroid[0] = centroid[0] / 4
+            centroid[1] = centroid[1] / 4
+            print("ROI 质心：", centroid)
 
-            # 根据缩放比例，将 roiPts 由相对于窗口的坐标转换为相对于原始图像的坐标
-            # 获取当前窗口的大小
-            _, _, wndWidth, wndHeight = cv2.getWindowImageRect(wndTitle)
+            # 通过比较各点到质心的角度进行排序
+            def phase_angle(point):
+                return cv2.fastAtan2(
+                    point[1] - centroid[1], point[0] - centroid[0])
+            sorted_roi_pts = sorted(roiPts, key=phase_angle, reverse=True)
+            print("排序后的 ROI 顶点：", sorted_roi_pts)
 
-            imgRoi = img.copy()
+            # 将 ROI 部分透视变换到 2100x2970 幅面（A4 长宽比）
+            pts1 = np.float32(sorted_roi_pts)
+            pts2 = np.float32([[2100, 0], [0, 0], [0, 2970], [2100, 2970]])
+            M = cv2.getPerspectiveTransform(pts1, pts2)
+            roi_img = cv2.warpPerspective(img, M, [2100, 2970])
+            cv2.imshow(wndTitle + " Result", roi_img)
 
     cv2.destroyAllWindows()
