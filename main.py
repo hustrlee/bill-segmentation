@@ -108,8 +108,8 @@ while True:
 
         # Windows 平台下手动调整显示窗口大小；macOS 平台无需调整
         resWndTitle = wnd_title + " Result"
+        cv2.namedWindow(resWndTitle, cv2.WINDOW_NORMAL)
         if platform.system() == "Windows":
-            cv2.namedWindow(resWndTitle, cv2.WINDOW_NORMAL)
             cv2.resizeWindow(resWndTitle, wnd_width, wnd_height)
         cv2.imshow(resWndTitle, roi_img)
 
