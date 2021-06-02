@@ -1,0 +1,5 @@
+{
+  "packageName": "bill_segmentation",
+  "packageVersion": "0.9.0",
+  "serverPort": "5000"
+}
