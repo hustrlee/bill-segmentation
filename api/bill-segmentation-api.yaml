@@ -14,7 +14,7 @@ paths:
       summary: 获取 API 版本号
       operationId: getVersion
       responses:
-        '200': # status code
+        "200": # status code
           description: 返回版本号
           content:
             application/json:
@@ -23,6 +23,18 @@ paths:
               example:
                 version: "bill-segmentation-v0.9.0"
 
+  /upload:
+    post:
+      summary: 上载文件
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/uploadPayload"
+      responses:
+        "200":
+          description: OK
+
 components:
   schemas:
     versionDto:
@@ -30,3 +42,10 @@ components:
       properties:
         version:
           type: string
+
+    uploadPayload:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
