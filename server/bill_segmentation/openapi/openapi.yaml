@@ -1,0 +1,53 @@
+openapi: 3.0.0
+info:
+  description: 按照票据模版，自动分割医疗票据
+  title: 票据分割 API
+  version: 0.9.0
+servers:
+- description: 内部测试地址
+  url: http://localhost:5000/bill-segmentation
+paths:
+  /upload:
+    post:
+      operationId: upload_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/uploadPayload'
+      responses:
+        "200":
+          description: OK
+      summary: 上载文件
+      x-openapi-router-controller: bill_segmentation.controllers.default_controller
+  /version:
+    get:
+      operationId: get_version
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                version: bill-segmentation-v0.9.0
+              schema:
+                $ref: '#/components/schemas/versionDto'
+          description: 返回版本号
+      summary: 获取 API 版本号
+      x-openapi-router-controller: bill_segmentation.controllers.default_controller
+components:
+  schemas:
+    versionDto:
+      example:
+        version: version
+      properties:
+        version:
+          title: version
+          type: string
+      title: versionDto
+      type: object
+    uploadPayload:
+      properties:
+        file:
+          format: binary
+          type: string
+      type: object
