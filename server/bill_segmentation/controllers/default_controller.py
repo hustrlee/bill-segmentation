@@ -3,6 +3,7 @@ import six
 
 from bill_segmentation.models.version_dto import VersionDto  # noqa: E501
 from bill_segmentation import util
+from flask import url_for
 
 
 def get_version():  # noqa: E501
@@ -26,4 +27,4 @@ def upload_post(file=None):  # noqa: E501
 
     :rtype: None
     """
-    return 'some thing else'
+    return url_for("static", filename="foo.jpeg", _external=True)
