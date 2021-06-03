@@ -1,5 +1,5 @@
 #!/bin/sh
-docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli:latest-release generate \
+docker run --rm -v ${PWD}:/local openapitools/openapi-generator-cli:latest generate \
   -i /local/bill-segmentation-api.yaml \
   -g python-flask \
   -o /local/python-flask \
