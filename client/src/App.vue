@@ -5,15 +5,9 @@
         id="orig-img"
         :width="canvasWidth"
         :height="canvasHeight"
-        style="border: 5px solid #d9d9d9; z-index: 1; position: absolute;"
-      >
-      </canvas>
-      <canvas
-        id="mask"
-        :width="canvasWidth"
-        :height="canvasHeight"
-        style="border: 5px solid #d9d9d9; z-index: 2; position: absolute;"
-        @click="selectRoi"
+        @click.left="addRoiVertex"
+        @click.right="removeRoiVertex"
+        @contextmenu.prevent
       >
       </canvas>
     </el-row>
@@ -37,6 +31,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   name: "app",
   components: {},
@@ -44,8 +40,17 @@ export default {
     return {
       canvasWidth: 800, // 画布宽度
       canvasHeight: 600, // 画布高度
+      origImg: new Image(),
+      origImgId: "",
       origImgWidth: 0, // 原始图像宽度
       origImgHeight: 0, // 原始图像高度
+      imgPosition: {
+        // 图像在画布中，相对于画布的显示位置
+        left: 0, // 左边界
+        right: 0, // 右边界
+        top: 0, // 上边界
+        bottom: 0 // 下边界
+      },
       roiPts: [] // 发票的 4 个顶点数组
     };
   },
@@ -53,41 +58,55 @@ export default {
     document.title = "票据分割示例";
   },
   methods: {
-    selectRoi(evt) {
-      var canvas = document.getElementById("orig-img");
-      // 将鼠标的绝对坐标，转换为 canvas 内部的坐标。
+    addRoiVertex(evt) {
+      // 将鼠标坐标，转换为 canvas 内部的坐标。
       // 需减去 canvas 边框的大小
-      var dx = evt.layerX - 5,
-        dy = evt.layerY - 5;
+      var x = evt.layerX - 5;
+      var y = evt.layerY - 5;
 
-      var ctx = canvas.getContext("2d");
-      // ctx.save();
-      // ctx.beginPath();
-      ctx.arc(dx, dy, 5, 0, 2 * Math.PI, false);
-      // ctx.fillStyle = "red";
-      // ctx.fill();
-      // ctx.closePath();
-      // ctx.restore();
+      // 如果坐标在显示区域内，且顶点数不足 4 个，则添加该顶点
+      if (
+        x >= this.imgPosition.left &&
+        x <= this.imgPosition.right &&
+        y >= this.imgPosition.top &&
+        y <= this.imgPosition.bottom &&
+        this.roiPts.length < 4
+      ) {
+        this.roiPts.push({ x, y });
+      }
     },
-    wrapPerspective() {},
+    removeRoiVertex() {
+      // 去掉最后一个顶点
+      if (this.roiPts.length > 0) {
+        this.roiPts.pop();
+      }
+    },
+    async wrapPerspective() {
+      // 调用服务完成透视变换
+      var res = await axios.post("/api/wrap_perspective", {
+        imgId: this.origImgId,
+        roiPts: this.roiPts
+      });
+      this.handleUploaded(res);
+    },
     wrapSegmentation() {},
     handleUploaded(res) {
       // 上载图像成功后，按照图像比例缩放显示在画布中
       var canvas = document.getElementById("orig-img");
       var ctx = canvas.getContext("2d");
 
-      var img = new Image();
       var _this = this;
 
-      img.onload = function() {
+      _this.origImg.onload = function() {
         // 保存原始图像宽度、高度
         _this.origImgWidth = this.width;
         _this.origImgHeight = this.height;
 
+        // 清除画布
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         // 按照图像比例缩放，居中显示
         var dx, dy, dWidth, dHeight;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         if (this.width > this.height) {
           // 图像是横向的
@@ -103,8 +122,51 @@ export default {
           dx = (canvas.width - dWidth) / 2;
         }
         ctx.drawImage(this, dx, dy, dWidth, dHeight);
+
+        // 保存图像相对于画布的显示位置
+        _this.imgPosition.left = dx;
+        _this.imgPosition.top = dy;
+        _this.imgPosition.right = dx + dWidth;
+        _this.imgPosition.bottom = dy + dHeight;
       };
-      img.src = res.uploadImgUrl;
+      _this.origImg.src = res.uploadImgUrl;
+      _this.origImgId = res.uploadImgId;
+    }
+  },
+  watch: {
+    roiPts: function(newRoiPts) {
+      // 顶点坐标数组发生变化，执行重画
+
+      var canvas = document.getElementById("orig-img");
+      var ctx = canvas.getContext("2d");
+      // 清除画布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // 绘制图像
+      ctx.drawImage(
+        this.origImg,
+        this.imgPosition.left,
+        this.imgPosition.top,
+        this.imgPosition.right - this.imgPosition.left,
+        this.imgPosition.bottom - this.imgPosition.top
+      );
+      // 绘制 ROI 区域顶点，及边界
+      if (newRoiPts.length > 0) {
+        ctx.lineWidth = 4;
+        ctx.lineCap = "square";
+        ctx.strokeStyle = "rgba(200, 0, 0)";
+        ctx.beginPath();
+        ctx.moveTo(newRoiPts[0].x, newRoiPts[0].y);
+        for (let pt of newRoiPts) {
+          ctx.lineTo(pt.x, pt.y);
+        }
+        if (newRoiPts.length == 4) {
+          ctx.closePath();
+          ctx.stroke();
+        } else {
+          ctx.stroke();
+          ctx.closePath();
+        }
+      }
     }
   }
 };
@@ -118,5 +180,9 @@ export default {
   text-align: center;
   color: #2c3e50;
   /* margin-top: 60px; */
+}
+
+#orig-img {
+  border: 5px solid #d9d9d9;
 }
 </style>
