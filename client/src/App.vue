@@ -2,7 +2,7 @@
   <div id="app">
     <el-row>
       <el-image
-        style="width: 800px; height: 600px; border: 5px solid #d9d9d9;"
+        style="width: 800px; height: 600px; border: 5px solid #d9d9d9"
         :src="imgUrl"
         fit="scale-down"
         @click="hello($event)"

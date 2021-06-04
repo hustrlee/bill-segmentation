@@ -30,10 +30,14 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/uploadPayload"
+              $ref: "#/components/schemas/uploadPayloadDto"
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/uploadRespondDto"
 
 components:
   schemas:
@@ -43,9 +47,19 @@ components:
         version:
           type: string
 
-    uploadPayload:
+    uploadPayloadDto:
       type: object
       properties:
         file:
           type: string
           format: binary
+
+    uploadRespondDto:
+      type: object
+      properties:
+        uploadImgUrl:
+          type: string
+        segmentationUrls:
+          type: array
+          items:
+            type: string
