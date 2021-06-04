@@ -6,6 +6,7 @@ import unittest
 from flask import json
 from six import BytesIO
 
+from bill_segmentation.models.upload_respond_dto import UploadRespondDto  # noqa: E501
 from bill_segmentation.models.version_dto import VersionDto  # noqa: E501
 from bill_segmentation.test import BaseTestCase
 
@@ -35,9 +36,10 @@ class TestDefaultController(BaseTestCase):
         上载文件
         """
         headers = { 
+            'Accept': 'application/json',
             'Content-Type': 'multipart/form-data',
         }
-        data = dict(file='/path/to/file')
+        data = dict(file=(BytesIO(b'some file data'), 'file.txt'))
         response = self.client.open(
             '/bill-segmentation/upload',
             method='POST',

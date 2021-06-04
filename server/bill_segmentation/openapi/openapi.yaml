@@ -14,9 +14,13 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/uploadPayload'
+              $ref: '#/components/schemas/uploadPayloadDto'
       responses:
         "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/uploadRespondDto'
           description: OK
       summary: 上载文件
       x-openapi-router-controller: bill_segmentation.controllers.default_controller
@@ -41,13 +45,25 @@ components:
         version: version
       properties:
         version:
-          title: version
           type: string
-      title: versionDto
       type: object
-    uploadPayload:
+    uploadPayloadDto:
       properties:
         file:
           format: binary
           type: string
+      type: object
+    uploadRespondDto:
+      example:
+        segmentationUrls:
+        - segmentationUrls
+        - segmentationUrls
+        uploadImgUrl: uploadImgUrl
+      properties:
+        uploadImgUrl:
+          type: string
+        segmentationUrls:
+          items:
+            type: string
+          type: array
       type: object
