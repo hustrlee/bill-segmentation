@@ -22,6 +22,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/imgOnServerDto'
           description: OK
+        "400":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: 图像文件格式不正确（后缀不正确）
       summary: 上载文件
       x-openapi-router-controller: bill_segmentation.controllers.default_controller
   /version:
