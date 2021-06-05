@@ -11,6 +11,7 @@ def main():
     app.add_api('openapi.yaml',
                 arguments={'title': '票据分割 API'},
                 pythonic_params=True)
+
     app.run(port=5000)
 
 

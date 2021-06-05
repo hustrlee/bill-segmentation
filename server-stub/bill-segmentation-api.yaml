@@ -39,6 +39,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/imgOnServerDto"
+        "400":
+          description: 图像文件格式不正确（后缀不正确）
+          content:
+            text/plain:
+              schema:
+                type: string
 
   /wrap-perspective/{imgId}:
     post:

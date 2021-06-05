@@ -9,7 +9,7 @@ servers:
 paths:
   /upload:
     post:
-      operationId: upload_post
+      operationId: upload_image
       requestBody:
         content:
           multipart/form-data:
@@ -20,7 +20,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/uploadRespondDto'
+                $ref: '#/components/schemas/imgOnServerDto'
           description: OK
       summary: 上载文件
       x-openapi-router-controller: bill_segmentation.controllers.default_controller
@@ -38,6 +38,73 @@ paths:
           description: 返回版本号
       summary: 获取 API 版本号
       x-openapi-router-controller: bill_segmentation.controllers.default_controller
+  /wrap-perspective/{imgId}:
+    post:
+      operationId: wrap_perspective
+      parameters:
+      - description: 图像 ID
+        explode: false
+        in: path
+        name: imgId
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/roiPtsDto'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/imgOnServerDto'
+          description: OK
+        "400":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: imgId 不正确
+      summary: 对指定图像进行透视矫正
+      x-openapi-router-controller: bill_segmentation.controllers.default_controller
+  /wrap-segmentation/{billType}/{imgId}:
+    get:
+      operationId: wrap_segmentation
+      parameters:
+      - description: 票据类型 ID
+        explode: false
+        in: path
+        name: billType
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: 图像 ID
+        explode: false
+        in: path
+        name: imgId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/wrapSegmentationResponseDto'
+          description: OK
+        "400":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: 票据类型或票据 ID 不正确
+      summary: 分割指定图像
+      x-openapi-router-controller: bill_segmentation.controllers.default_controller
 components:
   schemas:
     versionDto:
@@ -45,7 +112,9 @@ components:
         version: version
       properties:
         version:
+          title: version
           type: string
+      title: versionDto
       type: object
     uploadPayloadDto:
       properties:
@@ -53,17 +122,37 @@ components:
           format: binary
           type: string
       type: object
-    uploadRespondDto:
+    imgOnServerDto:
       example:
-        segmentationUrls:
-        - segmentationUrls
-        - segmentationUrls
         uploadImgUrl: uploadImgUrl
+        uploadImgId: uploadImgId
       properties:
-        uploadImgUrl:
+        uploadImgId:
+          title: uploadImgId
           type: string
-        segmentationUrls:
+        uploadImgUrl:
+          title: uploadImgUrl
+          type: string
+      title: imgOnServerDto
+      type: object
+    roiPtsDto:
+      properties:
+        roiPts:
           items:
-            type: string
+            $ref: '#/components/schemas/roiPtsDto_roiPts'
           type: array
+      type: object
+    wrapSegmentationResponseDto:
+      items:
+        $ref: '#/components/schemas/imgOnServerDto'
+      type: array
+    roiPtsDto_roiPts:
+      properties:
+        x:
+          title: x
+          type: integer
+        y:
+          title: "y"
+          type: integer
+      title: roiPtsDto_roiPts
       type: object
