@@ -6,6 +6,7 @@ import unittest
 from flask import json
 from six import BytesIO
 
+from bill_segmentation.models.error_handle_dto import ErrorHandleDto  # noqa: E501
 from bill_segmentation.models.img_on_server_dto import ImgOnServerDto  # noqa: E501
 from bill_segmentation.models.roi_pts_dto import RoiPtsDto  # noqa: E501
 from bill_segmentation.test import BaseTestCase

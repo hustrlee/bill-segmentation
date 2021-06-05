@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def wrap_perspective_cv(img_id, roi_pts):
+def warp_perspective_cv(img_id, roi_pts):
 
     # 读取图像
     img = cv2.imread("./bill_segmentation/static/" + img_id)

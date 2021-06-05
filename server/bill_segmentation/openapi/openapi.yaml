@@ -27,11 +27,11 @@ paths:
           description: OK
         "400":
           content:
-            text/plain:
-              example: 图像文件格式不正确
+            application/json:
+              example:
+                message: 图像文件格式不正确
               schema:
-                default: 图像文件格式不正确
-                type: string
+                $ref: '#/components/schemas/errorHandleDto'
           description: 图像文件格式不正确（后缀不正确）
       summary: 上载票据图像
       tags:
@@ -100,14 +100,16 @@ paths:
           description: OK
         "400":
           content:
-            text/plain:
+            application/json:
               examples:
                 图像 ID 不正确:
-                  value: 要求矫正的图像不存在
+                  value:
+                    message: 要求矫正的图像不存在
                 票据类型不正确:
-                  value: 票据库中没有该票据类型
+                  value:
+                    message: 票据库中没有该票据类型
               schema:
-                type: string
+                $ref: '#/components/schemas/errorHandleDto'
           description: 票据类型或票据 ID 不正确
       summary: 对图像进行透视矫正
       tags:
@@ -142,14 +144,16 @@ paths:
           description: OK
         "400":
           content:
-            text/plain:
+            application/json:
               examples:
                 图像 ID 不正确:
-                  value: 要求分割的图像不存在
+                  value:
+                    message: 要求分割的图像不存在
                 票据类型不正确:
-                  value: 票据库中没有该票据类型
+                  value:
+                    message: 票据库中没有该票据类型
               schema:
-                type: string
+                $ref: '#/components/schemas/errorHandleDto'
           description: 票据类型或票据 ID 不正确
       summary: 分割指定图像
       tags:
@@ -176,6 +180,13 @@ components:
         type: string
       style: simple
   schemas:
+    errorHandleDto:
+      properties:
+        message:
+          title: message
+          type: string
+      title: errorHandleDto
+      type: object
     versionDto:
       example:
         version: version

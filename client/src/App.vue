@@ -15,7 +15,7 @@
       <el-upload
         action="/api/upload"
         :show-file-list="false"
-        accept=".jpg, .jpeg, .png, .bmp, .md"
+        accept=".jpg, .jpeg, .png, .bmp"
         :on-success="loadImage"
         :on-error="
           err => {
@@ -26,7 +26,11 @@
         "
       >
         <el-button slot="trigger">选择图片</el-button>
-        <el-button style="margin-left: 10px;" @click="wrapPerspective">
+        <el-button
+          style="margin-left: 10px;"
+          @click="wrapPerspective"
+          :disabled="roiPts.length < 4"
+        >
           矫正图片</el-button
         >
         <el-button style="margin-left: 10px;" @click="wrapSegmentation">
@@ -139,16 +143,14 @@ export default {
         })
       );
       // 调用服务完成透视变换
-      var res = await axios.post(
-        "/api/wrap-perspective/sh-invoice/" + this.origImgId,
-        { pts: imgRoiPts }
-      );
-      if (res.code == 200) {
-        // 透视矫正成功，重新载入矫正成功的图像
+      try {
+        var res = await axios.post(
+          "/api/warp-perspective/sh-invoice/" + this.origImgId,
+          { pts: imgRoiPts }
+        );
         this.loadImage(res.data);
-      } else {
-        // 显示错误
-        this.$alert(res.data.message, "错误", {
+      } catch (error) {
+        this.$alert(error.response.data.message, "错误", {
           type: "error"
         });
       }

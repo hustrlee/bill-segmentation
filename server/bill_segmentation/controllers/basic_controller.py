@@ -4,6 +4,7 @@ import uuid
 
 from flask import url_for
 
+from bill_segmentation.models.error_handle_dto import ErrorHandleDto  # noqa: E501
 from bill_segmentation.models.img_on_server_dto import ImgOnServerDto  # noqa: E501
 from bill_segmentation import util
 
@@ -27,11 +28,9 @@ def upload_image(file=None):  # noqa: E501
 
     if file and allowed_file(file.filename):
         # 生成唯一 ID
-        imgId = str(uuid.uuid1())
-        filename = imgId + "." + file.filename.rsplit(".", 1)[1].lower()
+        img_id = str(uuid.uuid1())
+        filename = img_id + "." + file.filename.rsplit(".", 1)[1].lower()
         file.save("bill_segmentation/static/" + filename)
-        return {
-            "imgId": imgId,
-            "imgUrl": url_for("static", filename=filename, _external=True)
-        }
-    return {"message": "不支持的图像格式。仅支持：.png、.jpg、.jpeg、.bmp 文件。"}, 400
+        return ImgOnServerDto(img_id=img_id, img_url=url_for("static", filename=filename, _external=True))
+
+    return ErrorHandleDto(message="不支持的图像格式。仅支持：.png、.jpg、.jpeg、.bmp 文件。"), 400

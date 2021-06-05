@@ -13,4 +13,4 @@ def get_version():  # noqa: E501
 
     :rtype: VersionDto
     """
-    return {"version": "bill-segmentation-v0.9.0"}
+    return VersionDto(version="bill-segmentation-v0.9.0")
