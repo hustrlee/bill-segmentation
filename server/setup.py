@@ -33,7 +33,7 @@ setup(
     entry_points={
         'console_scripts': ['bill_segmentation=bill_segmentation.__main__:main']},
     long_description="""\
-    按照票据模版，自动分割医疗票据
+    按照票据模版，归一化并自动分割医疗票据
     """
 )
 

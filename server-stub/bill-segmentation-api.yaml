@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
   title: 票据分割 API
-  description: 按照票据模版，自动分割医疗票据
-  version: 0.9.0
+  description: 按照票据模版，归一化并自动分割医疗票据
+  version: 0.1.0
 
 servers:
   - url: http://localhost:5000/bill-segmentation
@@ -11,21 +11,25 @@ servers:
 paths:
   /version:
     get:
-      summary: 获取 API 版本号
+      tags:
+        - Version
       operationId: getVersion
+      summary: 获取 API 版本号
       responses:
-        "200": # status code
+        "200":
           description: 返回版本号
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/versionDto"
               example:
-                version: "bill-segmentation-v0.9.0"
+                version: "bill-segmentation-v0.1.0"
 
   /upload:
     post:
-      summary: 上载文件
+      tags:
+        - Basic
+      summary: 上载票据图像
       operationId: uploadImage
       requestBody:
         content:
@@ -39,29 +43,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/imgOnServerDto"
+              example:
+                imgId: eee0d217-598e-4987-82ff-3f4bb01570c8
+                imgUrl: http://localhost:5000/static/eee0d217-598e-4987-82ff-3f4bb01570c8.jpg
         "400":
           description: 图像文件格式不正确（后缀不正确）
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
+                $ref: "#/components/schemas/errorHandleDto"
+              example:
+                message: 图像文件格式不正确
 
-  /wrap-perspective/{imgId}:
+  /warp-perspective/{billTypeId}/{imgId}:
     post:
-      summary: 对指定图像进行透视矫正
-      operationId: wrapPerspective
+      tags:
+        - Image Process
+      summary: 对图像进行透视矫正
+      operationId: warpPerspective
       parameters:
-        - name: imgId
-          in: path
-          description: 图像 ID
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/billTypeId"
+        - $ref: "#/components/parameters/imgId"
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/roiPtsDto"
+            example:
+              pts:
+                - x: 0
+                  y: 0
+                - x: 100
+                  y: 0
+                - x: 100
+                  y: 100
+                - x: 0
+                  y: 100
       responses:
         "200":
           description: OK
@@ -69,46 +86,78 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/imgOnServerDto"
+              example:
+                imgId: eee0d217-598e-4987-82ff-3f4bb01570c8.perspective
+                imgUrl: http://localhost:5000/static/eee0d217-598e-4987-82ff-3f4bb01570c8.perspective.jpg
         "400":
-          description: imgId 不正确
+          description: 票据类型或票据 ID 不正确
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
+                $ref: "#/components/schemas/errorHandleDto"
+              examples:
+                图像 ID 不正确:
+                  value:
+                    message: 要求矫正的图像不存在
+                票据类型不正确:
+                  value:
+                    message: 票据库中没有该票据类型
 
-  /wrap-segmentation/{billType}/{imgId}:
+  /warp-segmentation/{billTypeId}/{imgId}:
     get:
+      tags:
+        - Image Process
       summary: 分割指定图像
-      operationId: wrapSegmentation
+      operationId: warpSegmentation
       parameters:
-        - name: billType
-          in: path
-          description: 票据类型 ID
-          required: true
-          schema:
-            type: string
-        - name: imgId
-          in: path
-          description: 图像 ID
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/billTypeId"
+        - $ref: "#/components/parameters/imgId"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/wrapSegmentationResponseDto"
+                $ref: "#/components/schemas/billSegmentationDto"
         "400":
           description: 票据类型或票据 ID 不正确
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
+                $ref: "#/components/schemas/errorHandleDto"
+              examples:
+                图像 ID 不正确:
+                  value:
+                    message: 要求分割的图像不存在
+                票据类型不正确:
+                  value:
+                    message: 票据库中没有该票据类型
 
 components:
+  parameters:
+    billTypeId:
+      name: billTypeId
+      description: 票据类型 ID，用于唯一确定一个票据类型
+      in: path
+      required: true
+      schema:
+        type: string
+
+    imgId:
+      name: imgId
+      description: 票据图像 ID，用于唯一确定一个图像
+      in: path
+      required: true
+      schema:
+        type: string
+
   schemas:
+    errorHandleDto:
+      type: object
+      properties:
+        message:
+          type: string
+
     versionDto:
       type: object
       properties:
@@ -125,15 +174,17 @@ components:
     imgOnServerDto:
       type: object
       properties:
-        uploadImgId:
+        imgId:
           type: string
-        uploadImgUrl:
+          description: 图像 ID，用于唯一确定一个图像
+        imgUrl:
           type: string
+          description: 图像 Url，用于访问图像
 
     roiPtsDto:
       type: object
       properties:
-        roiPts:
+        pts:
           type: array
           items:
             type: object
@@ -142,8 +193,10 @@ components:
                 type: integer
               y:
                 type: integer
+          minItems: 4
+          maxItems: 4
 
-    wrapSegmentationResponseDto:
+    billSegmentationDto:
       type: array
       items:
         $ref: "#/components/schemas/imgOnServerDto"

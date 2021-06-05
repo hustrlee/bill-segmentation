@@ -15,26 +15,26 @@ class ImgOnServerDto(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, upload_img_id=None, upload_img_url=None):  # noqa: E501
+    def __init__(self, img_id=None, img_url=None):  # noqa: E501
         """ImgOnServerDto - a model defined in OpenAPI
 
-        :param upload_img_id: The upload_img_id of this ImgOnServerDto.  # noqa: E501
-        :type upload_img_id: str
-        :param upload_img_url: The upload_img_url of this ImgOnServerDto.  # noqa: E501
-        :type upload_img_url: str
+        :param img_id: The img_id of this ImgOnServerDto.  # noqa: E501
+        :type img_id: str
+        :param img_url: The img_url of this ImgOnServerDto.  # noqa: E501
+        :type img_url: str
         """
         self.openapi_types = {
-            'upload_img_id': str,
-            'upload_img_url': str
+            'img_id': str,
+            'img_url': str
         }
 
         self.attribute_map = {
-            'upload_img_id': 'uploadImgId',
-            'upload_img_url': 'uploadImgUrl'
+            'img_id': 'imgId',
+            'img_url': 'imgUrl'
         }
 
-        self._upload_img_id = upload_img_id
-        self._upload_img_url = upload_img_url
+        self._img_id = img_id
+        self._img_url = img_url
 
     @classmethod
     def from_dict(cls, dikt) -> 'ImgOnServerDto':
@@ -48,43 +48,47 @@ class ImgOnServerDto(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def upload_img_id(self):
-        """Gets the upload_img_id of this ImgOnServerDto.
+    def img_id(self):
+        """Gets the img_id of this ImgOnServerDto.
 
+        图像 ID，用于唯一确定一个图像  # noqa: E501
 
-        :return: The upload_img_id of this ImgOnServerDto.
+        :return: The img_id of this ImgOnServerDto.
         :rtype: str
         """
-        return self._upload_img_id
+        return self._img_id
 
-    @upload_img_id.setter
-    def upload_img_id(self, upload_img_id):
-        """Sets the upload_img_id of this ImgOnServerDto.
+    @img_id.setter
+    def img_id(self, img_id):
+        """Sets the img_id of this ImgOnServerDto.
 
+        图像 ID，用于唯一确定一个图像  # noqa: E501
 
-        :param upload_img_id: The upload_img_id of this ImgOnServerDto.
-        :type upload_img_id: str
+        :param img_id: The img_id of this ImgOnServerDto.
+        :type img_id: str
         """
 
-        self._upload_img_id = upload_img_id
+        self._img_id = img_id
 
     @property
-    def upload_img_url(self):
-        """Gets the upload_img_url of this ImgOnServerDto.
+    def img_url(self):
+        """Gets the img_url of this ImgOnServerDto.
 
+        图像 Url，用于访问图像  # noqa: E501
 
-        :return: The upload_img_url of this ImgOnServerDto.
+        :return: The img_url of this ImgOnServerDto.
         :rtype: str
         """
-        return self._upload_img_url
+        return self._img_url
 
-    @upload_img_url.setter
-    def upload_img_url(self, upload_img_url):
-        """Sets the upload_img_url of this ImgOnServerDto.
+    @img_url.setter
+    def img_url(self, img_url):
+        """Sets the img_url of this ImgOnServerDto.
 
+        图像 Url，用于访问图像  # noqa: E501
 
-        :param upload_img_url: The upload_img_url of this ImgOnServerDto.
-        :type upload_img_url: str
+        :param img_url: The img_url of this ImgOnServerDto.
+        :type img_url: str
         """
 
-        self._upload_img_url = upload_img_url
+        self._img_url = img_url

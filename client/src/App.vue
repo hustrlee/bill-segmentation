@@ -15,8 +15,15 @@
       <el-upload
         action="/api/upload"
         :show-file-list="false"
-        accept=".jpg, .jpeg, .png, .bmp"
-        :on-success="handleUploaded"
+        accept=".jpg, .jpeg, .png, .bmp, .md"
+        :on-success="loadImage"
+        :on-error="
+          err => {
+            this.$alert(JSON.parse(err.message).message, '错误', {
+              type: 'error'
+            });
+          }
+        "
       >
         <el-button slot="trigger">选择图片</el-button>
         <el-button style="margin-left: 10px;" @click="wrapPerspective">
@@ -33,25 +40,27 @@
 <script>
 import axios from "axios";
 
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
+const CANVAS_BORDER_SIZE = 5;
+
 export default {
   name: "app",
   components: {},
   data() {
     return {
-      canvasWidth: 800, // 画布宽度
-      canvasHeight: 600, // 画布高度
-      origImg: new Image(),
-      origImgId: "",
-      origImgWidth: 0, // 原始图像宽度
-      origImgHeight: 0, // 原始图像高度
-      imgPosition: {
-        // 图像在画布中，相对于画布的显示位置
+      canvasWidth: CANVAS_WIDTH, // 画布宽度
+      canvasHeight: CANVAS_HEIGHT, // 画布高度
+      origImg: new Image(), // 原始图像对象
+      origImgId: "", // 原始图像 ID，由服务器设置，并保持唯一，用于指定服务器图像
+      imgRect: {
+        // 图像相对于画布的显示位置
         left: 0, // 左边界
-        right: 0, // 右边界
         top: 0, // 上边界
-        bottom: 0 // 下边界
+        width: 0, // 宽度
+        height: 0 // 高度
       },
-      roiPts: [] // 发票的 4 个顶点数组
+      roiPts: [] // 相对于画布的 4 个顶点数组，
     };
   },
   mounted: () => {
@@ -59,58 +68,29 @@ export default {
   },
   methods: {
     addRoiVertex(evt) {
-      // 将鼠标坐标，转换为 canvas 内部的坐标。
-      // 需减去 canvas 边框的大小
-      var x = evt.layerX - 5;
-      var y = evt.layerY - 5;
+      // 将鼠标坐标转换为 canvas 内部的坐标：需减去 canvas 边框的大小
+      var x = evt.layerX - CANVAS_BORDER_SIZE;
+      var y = evt.layerY - CANVAS_BORDER_SIZE;
 
       // 如果顶点数不足 4 个，则添加该顶点。
-      // 由于照片可能缺了边角，因此允许顶点在图片外
       if (this.roiPts.length < 4) {
         this.roiPts.push({ x, y });
       }
     },
     removeRoiVertex() {
-      // 去掉最后一个顶点
+      // 若果顶点数组不为空，去掉最后一个顶点
       if (this.roiPts.length > 0) {
         this.roiPts.pop();
       }
     },
-    async wrapPerspective() {
-      // 将屏幕 roiPts 转换成图像的 imgRoiPts
-      var ratio =
-        this.origImgWidth > this.origImgHeight
-          ? this.origImgWidth / (this.imgPosition.right - this.imgPosition.left)
-          : this.origImgHeight /
-            (this.imgPosition.bottom - this.imgPosition.top);
-      var imgRoiPts = [];
-      var _this = this;
-      this.roiPts.forEach(element =>
-        imgRoiPts.push({
-          x: Math.round((element.x - _this.imgPosition.left) * ratio),
-          y: Math.round((element.y - _this.imgPosition.top) * ratio)
-        })
-      );
-      // 调用服务完成透视变换
-      var res = await axios.post("/api/wrap-perspective/" + this.origImgId, {
-        roiPts: imgRoiPts
-      });
-      console.log(res);
-      this.handleUploaded(res.data);
-    },
-    wrapSegmentation() {},
-    handleUploaded(res) {
-      // 上载图像成功后，按照图像比例缩放显示在画布中
+    loadImage(res) {
+      // 从服务器载入图像，并按照图像比例缩放显示在画布中
       var canvas = document.getElementById("orig-img");
       var ctx = canvas.getContext("2d");
 
       var _this = this;
 
       _this.origImg.onload = function() {
-        // 保存原始图像宽度、高度
-        _this.origImgWidth = this.width;
-        _this.origImgHeight = this.height;
-
         // 清除画布
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -133,45 +113,78 @@ export default {
         ctx.drawImage(this, dx, dy, dWidth, dHeight);
 
         // 保存图像相对于画布的显示位置
-        _this.imgPosition.left = dx;
-        _this.imgPosition.top = dy;
-        _this.imgPosition.right = dx + dWidth;
-        _this.imgPosition.bottom = dy + dHeight;
+        _this.imgRect.left = dx;
+        _this.imgRect.top = dy;
+        _this.imgRect.width = dWidth;
+        _this.imgRect.height = dHeight;
 
         // 清空 ROI 的顶点，可能触发画布重画
         _this.roiPts.length = 0;
       };
-      _this.origImg.src = res.uploadImgUrl;
-      _this.origImgId = res.uploadImgId;
-    }
+      _this.origImg.src = res.imgUrl;
+      _this.origImgId = res.imgId;
+    },
+    async wrapPerspective() {
+      // 将相对于画布的 roiPts 坐标转换成相对于原始图像的 imgRoiPts
+      var ratio =
+        this.origImg.width > this.origImg.height
+          ? this.origImg.width / this.imgRect.width
+          : this.origImg.height / this.imgRect.height;
+      var imgRoiPts = [];
+      var _this = this;
+      this.roiPts.forEach(element =>
+        imgRoiPts.push({
+          x: Math.round((element.x - _this.imgRect.left) * ratio),
+          y: Math.round((element.y - _this.imgRect.top) * ratio)
+        })
+      );
+      // 调用服务完成透视变换
+      var res = await axios.post(
+        "/api/wrap-perspective/sh-invoice/" + this.origImgId,
+        { pts: imgRoiPts }
+      );
+      if (res.code == 200) {
+        // 透视矫正成功，重新载入矫正成功的图像
+        this.loadImage(res.data);
+      } else {
+        // 显示错误
+        this.$alert(res.data.message, "错误", {
+          type: "error"
+        });
+      }
+    },
+    wrapSegmentation() {}
   },
   watch: {
     roiPts: function(newRoiPts) {
       // 顶点坐标数组发生变化，执行重画
-
       var canvas = document.getElementById("orig-img");
       var ctx = canvas.getContext("2d");
+
       // 清除画布
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       // 绘制图像
       ctx.drawImage(
         this.origImg,
-        this.imgPosition.left,
-        this.imgPosition.top,
-        this.imgPosition.right - this.imgPosition.left,
-        this.imgPosition.bottom - this.imgPosition.top
+        this.imgRect.left,
+        this.imgRect.top,
+        this.imgRect.width,
+        this.imgRect.height
       );
+
       // 绘制 ROI 区域顶点，及边界
       if (newRoiPts.length > 0) {
         ctx.lineWidth = 4;
         ctx.lineCap = "square";
-        ctx.strokeStyle = "rgba(200, 0, 0)";
+        ctx.strokeStyle = "rgba(255, 0, 0)";
         ctx.beginPath();
         ctx.moveTo(newRoiPts[0].x, newRoiPts[0].y);
         for (let pt of newRoiPts) {
           ctx.lineTo(pt.x, pt.y);
         }
         if (newRoiPts.length == 4) {
+          // 如果已加入 4 个顶点，则需要闭合 ROI 区域
           ctx.closePath();
           ctx.stroke();
         } else {

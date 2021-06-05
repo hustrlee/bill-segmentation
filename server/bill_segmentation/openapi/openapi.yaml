@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  description: 按照票据模版，自动分割医疗票据
+  description: 按照票据模版，归一化并自动分割医疗票据
   title: 票据分割 API
-  version: 0.9.0
+  version: 0.1.0
 servers:
 - description: 内部测试地址
   url: http://localhost:5000/bill-segmentation
@@ -19,17 +19,24 @@ paths:
         "200":
           content:
             application/json:
+              example:
+                imgId: eee0d217-598e-4987-82ff-3f4bb01570c8
+                imgUrl: http://localhost:5000/static/eee0d217-598e-4987-82ff-3f4bb01570c8.jpg
               schema:
                 $ref: '#/components/schemas/imgOnServerDto'
           description: OK
         "400":
           content:
             text/plain:
+              example: 图像文件格式不正确
               schema:
+                default: 图像文件格式不正确
                 type: string
           description: 图像文件格式不正确（后缀不正确）
-      summary: 上载文件
-      x-openapi-router-controller: bill_segmentation.controllers.default_controller
+      summary: 上载票据图像
+      tags:
+      - Basic
+      x-openapi-router-controller: bill_segmentation.controllers.basic_controller
   /version:
     get:
       operationId: get_version
@@ -38,17 +45,27 @@ paths:
           content:
             application/json:
               example:
-                version: bill-segmentation-v0.9.0
+                version: bill-segmentation-v0.1.0
               schema:
                 $ref: '#/components/schemas/versionDto'
           description: 返回版本号
       summary: 获取 API 版本号
-      x-openapi-router-controller: bill_segmentation.controllers.default_controller
-  /wrap-perspective/{imgId}:
+      tags:
+      - Version
+      x-openapi-router-controller: bill_segmentation.controllers.version_controller
+  /warp-perspective/{billTypeId}/{imgId}:
     post:
-      operationId: wrap_perspective
+      operationId: warp_perspective
       parameters:
-      - description: 图像 ID
+      - description: 票据类型 ID，用于唯一确定一个票据类型
+        explode: false
+        in: path
+        name: billTypeId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: 票据图像 ID，用于唯一确定一个图像
         explode: false
         in: path
         name: imgId
@@ -59,36 +76,56 @@ paths:
       requestBody:
         content:
           application/json:
+            example:
+              pts:
+              - x: 0
+                y: 0
+              - x: 100
+                y: 0
+              - x: 100
+                y: 100
+              - x: 0
+                y: 100
             schema:
               $ref: '#/components/schemas/roiPtsDto'
       responses:
         "200":
           content:
             application/json:
+              example:
+                imgId: eee0d217-598e-4987-82ff-3f4bb01570c8.perspective
+                imgUrl: http://localhost:5000/static/eee0d217-598e-4987-82ff-3f4bb01570c8.perspective.jpg
               schema:
                 $ref: '#/components/schemas/imgOnServerDto'
           description: OK
         "400":
           content:
             text/plain:
+              examples:
+                图像 ID 不正确:
+                  value: 要求矫正的图像不存在
+                票据类型不正确:
+                  value: 票据库中没有该票据类型
               schema:
                 type: string
-          description: imgId 不正确
-      summary: 对指定图像进行透视矫正
-      x-openapi-router-controller: bill_segmentation.controllers.default_controller
-  /wrap-segmentation/{billType}/{imgId}:
+          description: 票据类型或票据 ID 不正确
+      summary: 对图像进行透视矫正
+      tags:
+      - Image Process
+      x-openapi-router-controller: bill_segmentation.controllers.image_process_controller
+  /warp-segmentation/{billTypeId}/{imgId}:
     get:
-      operationId: wrap_segmentation
+      operationId: warp_segmentation
       parameters:
-      - description: 票据类型 ID
+      - description: 票据类型 ID，用于唯一确定一个票据类型
         explode: false
         in: path
-        name: billType
+        name: billTypeId
         required: true
         schema:
           type: string
         style: simple
-      - description: 图像 ID
+      - description: 票据图像 ID，用于唯一确定一个图像
         explode: false
         in: path
         name: imgId
@@ -101,17 +138,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/wrapSegmentationResponseDto'
+                $ref: '#/components/schemas/billSegmentationDto'
           description: OK
         "400":
           content:
             text/plain:
+              examples:
+                图像 ID 不正确:
+                  value: 要求分割的图像不存在
+                票据类型不正确:
+                  value: 票据库中没有该票据类型
               schema:
                 type: string
           description: 票据类型或票据 ID 不正确
       summary: 分割指定图像
-      x-openapi-router-controller: bill_segmentation.controllers.default_controller
+      tags:
+      - Image Process
+      x-openapi-router-controller: bill_segmentation.controllers.image_process_controller
 components:
+  parameters:
+    billTypeId:
+      description: 票据类型 ID，用于唯一确定一个票据类型
+      explode: false
+      in: path
+      name: billTypeId
+      required: true
+      schema:
+        type: string
+      style: simple
+    imgId:
+      description: 票据图像 ID，用于唯一确定一个图像
+      explode: false
+      in: path
+      name: imgId
+      required: true
+      schema:
+        type: string
+      style: simple
   schemas:
     versionDto:
       example:
@@ -130,29 +193,33 @@ components:
       type: object
     imgOnServerDto:
       example:
-        uploadImgUrl: uploadImgUrl
-        uploadImgId: uploadImgId
+        imgUrl: imgUrl
+        imgId: imgId
       properties:
-        uploadImgId:
-          title: uploadImgId
+        imgId:
+          description: 图像 ID，用于唯一确定一个图像
+          title: imgId
           type: string
-        uploadImgUrl:
-          title: uploadImgUrl
+        imgUrl:
+          description: 图像 Url，用于访问图像
+          title: imgUrl
           type: string
       title: imgOnServerDto
       type: object
     roiPtsDto:
       properties:
-        roiPts:
+        pts:
           items:
-            $ref: '#/components/schemas/roiPtsDto_roiPts'
+            $ref: '#/components/schemas/roiPtsDto_pts'
+          maxItems: 4
+          minItems: 4
           type: array
       type: object
-    wrapSegmentationResponseDto:
+    billSegmentationDto:
       items:
         $ref: '#/components/schemas/imgOnServerDto'
       type: array
-    roiPtsDto_roiPts:
+    roiPtsDto_pts:
       properties:
         x:
           title: x
@@ -160,5 +227,5 @@ components:
         y:
           title: "y"
           type: integer
-      title: roiPtsDto_roiPts
+      title: roiPtsDto_pts
       type: object
