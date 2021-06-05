@@ -64,14 +64,9 @@ export default {
       var x = evt.layerX - 5;
       var y = evt.layerY - 5;
 
-      // 如果坐标在显示区域内，且顶点数不足 4 个，则添加该顶点
-      if (
-        x >= this.imgPosition.left &&
-        x <= this.imgPosition.right &&
-        y >= this.imgPosition.top &&
-        y <= this.imgPosition.bottom &&
-        this.roiPts.length < 4
-      ) {
+      // 如果顶点数不足 4 个，则添加该顶点。
+      // 由于照片可能缺了边角，因此允许顶点在图片外
+      if (this.roiPts.length < 4) {
         this.roiPts.push({ x, y });
       }
     },
@@ -82,12 +77,26 @@ export default {
       }
     },
     async wrapPerspective() {
+      // 将屏幕 roiPts 转换成图像的 imgRoiPts
+      var ratio =
+        this.origImgWidth > this.origImgHeight
+          ? this.origImgWidth / (this.imgPosition.right - this.imgPosition.left)
+          : this.origImgHeight /
+            (this.imgPosition.bottom - this.imgPosition.top);
+      var imgRoiPts = [];
+      var _this = this;
+      this.roiPts.forEach(element =>
+        imgRoiPts.push({
+          x: Math.round((element.x - _this.imgPosition.left) * ratio),
+          y: Math.round((element.y - _this.imgPosition.top) * ratio)
+        })
+      );
       // 调用服务完成透视变换
-      var res = await axios.post("/api/wrap_perspective", {
-        imgId: this.origImgId,
-        roiPts: this.roiPts
+      var res = await axios.post("/api/wrap-perspective/" + this.origImgId, {
+        roiPts: imgRoiPts
       });
-      this.handleUploaded(res);
+      console.log(res);
+      this.handleUploaded(res.data);
     },
     wrapSegmentation() {},
     handleUploaded(res) {
@@ -128,6 +137,9 @@ export default {
         _this.imgPosition.top = dy;
         _this.imgPosition.right = dx + dWidth;
         _this.imgPosition.bottom = dy + dHeight;
+
+        // 清空 ROI 的顶点，可能触发画布重画
+        _this.roiPts.length = 0;
       };
       _this.origImg.src = res.uploadImgUrl;
       _this.origImgId = res.uploadImgId;

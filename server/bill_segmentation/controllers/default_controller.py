@@ -8,6 +8,8 @@ from bill_segmentation.models.roi_pts_dto import RoiPtsDto  # noqa: E501
 from bill_segmentation.models.version_dto import VersionDto  # noqa: E501
 from bill_segmentation import util
 
+from bill_segmentation.image_process.transform import wrap_perspective_cv
+
 
 def get_version():  # noqa: E501
     """获取 API 版本号
@@ -60,7 +62,10 @@ def wrap_perspective(img_id, roi_pts_dto=None):  # noqa: E501
     """
     if connexion.request.is_json:
         roi_pts_dto = RoiPtsDto.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+
+    filename = wrap_perspective_cv(img_id, roi_pts_dto.roi_pts)
+    return {"uploadImgUrl": url_for("static", filename=filename, _external=True),
+            "uploadImgId": filename}
 
 
 def wrap_segmentation(bill_type, img_id):  # noqa: E501
