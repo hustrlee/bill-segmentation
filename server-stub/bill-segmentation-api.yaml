@@ -26,6 +26,7 @@ paths:
   /upload:
     post:
       summary: 上载文件
+      operationId: uploadImage
       requestBody:
         content:
           multipart/form-data:
@@ -37,7 +38,68 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/uploadRespondDto"
+                $ref: "#/components/schemas/imgOnServerDto"
+
+  /wrap-perspective/{imgId}:
+    post:
+      summary: 对指定图像进行透视矫正
+      operationId: wrapPerspective
+      parameters:
+        - name: imgId
+          in: path
+          description: 图像 ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/roiPtsDto"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/imgOnServerDto"
+        "400":
+          description: imgId 不正确
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /wrap-segmentation/{billType}/{imgId}:
+    get:
+      summary: 分割指定图像
+      operationId: wrapSegmentation
+      parameters:
+        - name: billType
+          in: path
+          description: 票据类型 ID
+          required: true
+          schema:
+            type: string
+        - name: imgId
+          in: path
+          description: 图像 ID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/wrapSegmentationResponseDto"
+        "400":
+          description: 票据类型或票据 ID 不正确
+          content:
+            text/plain:
+              schema:
+                type: string
 
 components:
   schemas:
@@ -54,12 +116,28 @@ components:
           type: string
           format: binary
 
-    uploadRespondDto:
+    imgOnServerDto:
       type: object
       properties:
+        uploadImgId:
+          type: string
         uploadImgUrl:
           type: string
-        segmentationUrls:
+
+    roiPtsDto:
+      type: object
+      properties:
+        roiPts:
           type: array
           items:
-            type: string
+            type: object
+            properties:
+              x:
+                type: integer
+              y:
+                type: integer
+
+    wrapSegmentationResponseDto:
+      type: array
+      items:
+        $ref: "#/components/schemas/imgOnServerDto"
