@@ -1,6 +1,7 @@
 import os
 
 import connexion
+from flask.helpers import url_for
 import six
 
 from bill_segmentation.models.error_handle_dto import ErrorHandleDto  # noqa: E501
@@ -8,7 +9,9 @@ from bill_segmentation.models.img_on_server_dto import ImgOnServerDto  # noqa: E
 from bill_segmentation.models.roi_pts_dto import RoiPtsDto  # noqa: E501
 from bill_segmentation import util
 
+from bill_segmentation.image_api.util import get_img_filename
 from bill_segmentation.bill_api.specification import get_perspective_param
+from bill_segmentation.image_api.transform import warp_perspective_cv
 
 
 def warp_perspective(bill_type_id, img_id, roi_pts_dto=None):  # noqa: E501
@@ -29,13 +32,22 @@ def warp_perspective(bill_type_id, img_id, roi_pts_dto=None):  # noqa: E501
         roi_pts_dto = RoiPtsDto.from_dict(connexion.request.get_json())  # noqa: E501
 
     # 验证图片是否存在
+    filename = get_img_filename(img_id)
+    if not filename:
+        return ErrorHandleDto(message="要求矫正的图像不存在，请检查 imgId 是否正确"), 400
 
     # 读取票据的矫正点参数
     perspective_param = get_perspective_param(bill_type_id)
     if not perspective_param:
-        return ErrorHandleDto(message="不支持的票据类型"), 400
+        return ErrorHandleDto(message="不支持的票据类型，请检查 billTypeId 是否正确"), 400
 
-    return 'do some magic!'
+    res = warp_perspective_cv(filename, perspective_param, roi_pts_dto.pts)
+
+    # 模拟生成 img_id
+    _, res_filename = os.path.split(res)
+    res_img_id, _ = os.path.splitext(res_filename)
+
+    return ImgOnServerDto(img_id=res_img_id, img_url=url_for("static", filename=res_filename, _external=True))
 
 
 def warp_segmentation(bill_type_id, img_id):  # noqa: E501
