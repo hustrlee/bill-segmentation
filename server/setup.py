@@ -4,7 +4,7 @@ import sys
 from setuptools import setup, find_packages
 
 NAME = "bill_segmentation"
-VERSION = "0.9.0"
+VERSION = "0.1.0"
 
 # To install the library, run the following
 #
@@ -36,4 +36,3 @@ setup(
     按照票据模版，归一化并自动分割医疗票据
     """
 )
-
