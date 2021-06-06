@@ -11,7 +11,7 @@
       >
       </canvas>
     </el-row>
-    <el-row>
+    <el-row style="margin-bottom: 20px;">
       <el-upload
         action="/api/upload"
         :show-file-list="false"
@@ -37,6 +37,12 @@
           分割图片</el-button
         >
       </el-upload>
+    </el-row>
+    <el-row v-for="item in segmentationImgs" :key="item.name">
+      <div>{{ item.name }}</div>
+      <div>
+        <img :src="item.img_url" />
+      </div>
     </el-row>
   </div>
 </template>
@@ -64,7 +70,8 @@ export default {
         width: 0, // 宽度
         height: 0 // 高度
       },
-      roiPts: [] // 相对于画布的 4 个顶点数组，
+      roiPts: [], // 相对于画布的 4 个顶点数组
+      segmentationImgs: [] // 分割结果
     };
   },
   mounted: () => {
@@ -150,12 +157,19 @@ export default {
         );
         this.loadImage(res.data);
       } catch (error) {
-        this.$alert(error.response.data.message, "错误", {
-          type: "error"
-        });
+        this.$alert(error.response.data.message, "错误", { type: "error" });
       }
     },
-    wrapSegmentation() {}
+    async wrapSegmentation() {
+      // 调用服务完成图像分割
+      try {
+        this.segmentationImgs = (
+          await axios.get("/api/warp-segmentation/sh-invoice/" + this.origImgId)
+        ).data;
+      } catch (error) {
+        this.$alert(error.response.data.message, "错误", { type: "error" });
+      }
+    }
   },
   watch: {
     roiPts: function(newRoiPts) {

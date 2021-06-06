@@ -55,3 +55,40 @@ def warp_perspective_cv(filename, perspective_param, roi_pts):
 
     # 返回矫正后的文件名（包含路径）
     return dst_filename
+
+
+def warp_segmentation_cv(filename, segmentation_param):
+    """执行图片分割
+
+    :param filename: 图像文件名
+    :type filename: str
+    :param segmentation_param: 分割参数
+    :type segmentation_param: dict
+
+    :rtype: list
+    """
+
+    # 读取图像
+    img = cv2.imread(filename)
+
+    # 分离 filename，便于后面组合 seg_filename
+    file_root, file_ext = os.path.splitext(filename)
+
+    # segmentation_param 的第一个值是票据标准幅面尺寸，按此尺寸 resize 图像
+    if not img.shape[0:2] == (segmentation_param[0]["rect"][3], segmentation_param[0]["rect"][2]):
+        img = cv2.resize(img, segmentation_param[0]["rect"][2:])
+
+    seg_files = []
+
+    # 遍历 segmentation_param 的后续参数，切割图片，并保存
+    for param in segmentation_param[1:]:
+        left = param["rect"][0]
+        right = left + param["rect"][2]
+        top = param["rect"][1]
+        bottom = top + param["rect"][3]
+        seg_img = img[top:bottom, left:right]
+        seg_filename = file_root + "." + param["name"] + "." + file_ext
+        cv2.imwrite(seg_filename, seg_img)
+        seg_files.append({"name": param["name"], "img_url": seg_filename})
+
+    return seg_files

@@ -11,7 +11,9 @@ from bill_segmentation import util
 
 from bill_segmentation.image_api.util import get_img_filename
 from bill_segmentation.bill_api.specification import get_perspective_param
+from bill_segmentation.bill_api.specification import get_segmentation_param
 from bill_segmentation.image_api.transform import warp_perspective_cv
+from bill_segmentation.image_api.transform import warp_segmentation_cv
 
 
 def warp_perspective(bill_type_id, img_id, roi_pts_dto=None):  # noqa: E501
@@ -36,7 +38,7 @@ def warp_perspective(bill_type_id, img_id, roi_pts_dto=None):  # noqa: E501
     if not filename:
         return ErrorHandleDto(message="要求矫正的图像不存在，请检查 imgId 是否正确"), 400
 
-    # 读取票据的矫正点参数
+    # 读取票据的矫正参数
     perspective_param = get_perspective_param(bill_type_id)
     if not perspective_param:
         return ErrorHandleDto(message="不支持的票据类型，请检查 billTypeId 是否正确"), 400
@@ -62,4 +64,29 @@ def warp_segmentation(bill_type_id, img_id):  # noqa: E501
 
     :rtype: List[ImgOnServerDto]
     """
-    return 'do some magic!'
+
+    # 验证图片是否存在
+    filename = get_img_filename(img_id)
+    if not filename:
+        return ErrorHandleDto(message="要求分割的图像不存在，请检查 imgId 是否正确"), 400
+
+    # 读取票据的分割参数
+    segmentation_param = get_segmentation_param(bill_type_id)
+    if not segmentation_param:
+        return ErrorHandleDto(message="不支持的票据类型，请检查 billTypeId 是否正确"), 400
+
+    res = warp_segmentation_cv(filename, segmentation_param)
+
+    # 生成发布 img_url
+    for item in res:
+        _, item_filename = os.path.split(item["img_url"])
+        item["img_url"] = url_for(
+            "static", filename=item_filename, _external=True)
+
+    # # 模拟生成 img_id
+    # for item in res:
+    #     _, item_filename = os.path.split(item["img_url"])
+    #     item_img_id, _ = os.path.splitext(item_filename)
+    #     item["img_id"] = item_img_id
+
+    return res
