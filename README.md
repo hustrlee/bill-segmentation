@@ -1,6 +1,6 @@
-# 图像透视变换
+# 医疗票据分割
 
-使用 OpenCV-Python 实现图像的透视变换，来对拍照的文档进行矫正。
+使用 OpenCV-Python 实现医疗票据分割服务。
 
 本项目记录了所有开发步骤。
 
@@ -14,8 +14,8 @@
 4. 创建 `ipt` 开发环境，并切换到该环境。
 
 ```sh
-conda create --name ipt python=3
-source activate ipt
+conda create --name seg python=3
+source activate seg
 ```
 
 5. 安装 `opencv`
@@ -34,3 +34,33 @@ import cv2
 print(cv2.__version__) # 查看 opencv 版本
 ```
 
+7. 客户端使用 `Vue` 进行开发。
+
+
+
+## 测试
+
+### 运行服务端
+
+```sh
+cd server
+source activate seg # 激活 Python 运行环境。Windows 下使用 conda activate seg
+pip install -r requirement.txt # 安装依赖
+python -m bill_segmentation
+```
+
+
+
+### 运行客户端
+
+```sh
+cd client
+npm install # 安装依赖
+npm run serve
+```
+
+
+
+## 中文路径问题
+
+Python 采用 utf-8 编码，而 Windows 采用 Unicode 编码。而分割后的文件名中包含中文，在 Windows 下被识别为乱码，导致 Client 端不能正常显示。
