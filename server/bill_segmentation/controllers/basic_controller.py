@@ -21,7 +21,7 @@ def upload_image(file=None):  # noqa: E501
     """
     # 检查上传文件的后缀名是否合法，并保存文件到 static 目录
 
-    ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "bmp"}
+    ALLOWED_EXTENSIONS = {"jpg"}
 
     def allowed_file(filename):
         return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -33,4 +33,4 @@ def upload_image(file=None):  # noqa: E501
         file.save("bill_segmentation/static/" + filename)
         return ImgOnServerDto(img_id=img_id, img_url=url_for("static", filename=filename, _external=True))
 
-    return ErrorHandleDto(message="不支持的图像格式。仅支持：.png、.jpg、.jpeg、.bmp 文件。"), 400
+    return ErrorHandleDto(message="不支持的图像格式。仅支持：.jpg 文件。"), 400

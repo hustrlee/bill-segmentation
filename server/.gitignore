@@ -1,4 +1,4 @@
-bill_segmentation/static/*
+bill_segmentation/static/*.jpg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
