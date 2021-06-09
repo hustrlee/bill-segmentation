@@ -199,4 +199,11 @@ components:
     billSegmentationDto:
       type: array
       items:
-        $ref: "#/components/schemas/imgOnServerDto"
+        type: object
+        properties:
+          name:
+            type: string
+            description: 图像片段的名称，例如：姓名、性别等
+          imgUrl:
+            type: string
+            description: 图像 Url，用于访问图像
